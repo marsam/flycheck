@@ -249,6 +249,7 @@
     xml-xmlstarlet
     xml-xmllint
     yaml-actionlint
+    yaml-fy-tool
     yaml-jsyaml
     yaml-ruby
     yaml-yamllint)
@@ -12656,6 +12657,18 @@ The xmllint is part of libxml2, see URL
   :error-patterns
   ((error line-start "-:" line ": " (message) line-end))
   :modes (xml-mode nxml-mode))
+
+(flycheck-define-checker yaml-fy-tool
+  "A YAML syntax checker using FY-TOOL.
+
+See URL `https://github.com/pantoniou/libfyaml'."
+  :command ("fy-tool" "--collect-errors")
+  :standard-input t
+  :error-patterns
+  ((error line-start "stdin:" line ":" column " " (message) line-end))
+  :modes yaml-mode
+  :next-checkers ((warning . yaml-yamllint)
+                  (warning . cwl)))
 
 (flycheck-define-checker yaml-jsyaml
   "A YAML syntax checker using JS-YAML.
