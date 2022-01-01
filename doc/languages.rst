@@ -1483,7 +1483,7 @@ to view the docstring of the syntax checker.  Likewise, you may use
 
    .. syntax-checker:: terraform-tflint
 
-      Check Terraform with `tflint <https://github.com/wata727/tflint>`_
+      Check Terraform with `tflint <https://github.com/terraform-linters/tflint>`_
 
       .. defcustom:: flycheck-tflint-variable-files
 
