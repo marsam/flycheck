@@ -12353,31 +12353,46 @@ the BUFFER that was checked respectively.
 
 See URL `https://github.com/terraform-linters/tflint' for more
 information about tflint."
-  (mapcar (lambda (err)
-            (let-alist err
-              (flycheck-error-new-at
-               .range.start.line
-               .range.start.column
-               (pcase .rule.severity
-                 ("error"   'error)
-                 ("warning" 'warning)
-                 (_         'error))
-               .message
-               :end-line .range.end.line
-               :end-column .range.end.column
-               :id .rule.name
-               :checker checker
-               :buffer buffer
-               :filename (buffer-file-name buffer))))
-          (cdr (assq 'issues (car (flycheck-parse-json output))))))
+  (mapcan (lambda (entry)
+            (mapcar (lambda (err)
+                      (let-alist err
+                        (flycheck-error-new-at
+                         .range.start.line
+                         .range.start.column
+                         (pcase .rule.severity
+                           ("error"   'error)
+                           ("warning" 'warning)
+                           (_         'error))
+                         .message
+                         :end-line .range.end.line
+                         :end-column .range.end.column
+                         :id .rule.name
+                         :checker checker
+                         :buffer buffer)))
+                    (cdr entry)))
+          (car (flycheck-parse-json output))))
+
+(defun flycheck-tflint-main-tf-directory ()
+  "Return the nearest directory holding the Cargo manifest.
+
+Return the nearest directory containing the `main.tf' manifest
+file, starting from the current buffer and using
+`locate-dominating-file'.  Return nil if there is no such file,
+or if the current buffer has no file name."
+  (and buffer-file-name
+       (locate-dominating-file buffer-file-name "main.tf")))
 
 (flycheck-define-checker terraform-tflint
   "A Terraform checker using tflint.
 
 See URL `https://github.com/terraform-linters/tflint'."
   :command ("tflint" "--format=json" "--force"
-            (option-list "--var-file=" flycheck-tflint-variable-files concat))
+            (option-list "--var-file=" flycheck-tflint-variable-files concat)
+            ;"--filter" (eval (file-relative-name buffer-file-name))
+            )
   :error-parser flycheck-parse-tflint-linter
+  :enabled flycheck-tflint-main-tf-directory
+  :working-directory (lambda (_) (flycheck-tflint-main-tf-directory))
   :predicate flycheck-buffer-saved-p
   :modes terraform-mode)
 
@@ -12675,7 +12690,7 @@ See URL `https://github.com/rhysd/actionlint'."
   :error-filter
   (lambda (errors)
     (flycheck-sanitize-errors (flycheck-increment-error-columns errors)))
-  :modes yaml-mode)
+  :modes (yaml-mode yaml-ts-mode))
 
 (flycheck-define-checker yaml-fy-tool
   "A YAML syntax checker using FY-TOOL.
