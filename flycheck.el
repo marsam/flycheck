@@ -12658,6 +12658,25 @@ The xmllint is part of libxml2, see URL
   ((error line-start "-:" line ": " (message) line-end))
   :modes (xml-mode nxml-mode))
 
+(flycheck-define-checker yaml-actionlint
+  "A YAML syntax checker using actionlint.
+
+See URL `https://github.com/rhysd/actionlint'."
+  :command ("actionlint" "-")
+  :standard-input t
+  :error-patterns
+  ((error line-start "<stdin>:" line ":" column ": "
+          (message) " [" (id (one-or-more (in word "-"))) "]"
+          line-end))
+  :enabled
+  (lambda ()
+    (and buffer-file-name
+         (string-match-p ".github/workflows/.+\\.ya?ml\\'" buffer-file-name)))
+  :error-filter
+  (lambda (errors)
+    (flycheck-sanitize-errors (flycheck-increment-error-columns errors)))
+  :modes yaml-mode)
+
 (flycheck-define-checker yaml-fy-tool
   "A YAML syntax checker using FY-TOOL.
 
@@ -12668,6 +12687,7 @@ See URL `https://github.com/pantoniou/libfyaml'."
   ((error line-start "stdin:" line ":" column " " (message) line-end))
   :modes yaml-mode
   :next-checkers ((warning . yaml-yamllint)
+                  (t       . yaml-actionlint)
                   (warning . cwl)))
 
 (flycheck-define-checker yaml-jsyaml
@@ -12687,6 +12707,7 @@ See URL `https://github.com/nodeca/js-yaml'."
           line-end))
   :modes (yaml-mode yaml-ts-mode)
   :next-checkers ((warning . yaml-yamllint)
+                  (t       . yaml-actionlint)
                   (warning . cwl)))
 
 (flycheck-define-checker yaml-ruby
